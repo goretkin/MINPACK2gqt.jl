@@ -1,7 +1,5 @@
-      subroutine destsv(n,r,ldr,svmin,z)
-      integer ldr, n
-      double precision svmin
-      double precision r(ldr,n), z(n)
+function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float64,z::AbstractArray{Float64,1})
+      #TODO assert size(r) == (ldr,n), size(z) == (n)
 
 c Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
 c see CopyrightMINPACK.txt
