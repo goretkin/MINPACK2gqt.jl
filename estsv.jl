@@ -68,7 +68,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
       double precision dasum, dnrm2
       external dasum, daxpy, dnrm2, dscal
 
-      for i = 1, n
+      for i = 1:n
          z[i] = zero_
       end
 
@@ -83,7 +83,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #     Solve R'*y = e.
 
-      for i = 1, n
+      for i = 1:n
 
 #        Scale y. The factor of 0.01 reduces the number of scalings.
 
@@ -108,7 +108,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
          s = abs(e-z[i])
          sm = abs(e+z[i])
-         for j = i + 1, n
+         for j = (i + 1):n
             sm = sm + abs(z[j]+wm*r[i,j])
          end
          if (i .lt. n)
@@ -128,7 +128,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #     Solve R*z = y.
 
-      for j = n, 1, -1
+      for j = n:-1:1
 
 #        Scale z.
 
