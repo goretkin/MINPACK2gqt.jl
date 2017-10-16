@@ -58,8 +58,9 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 #     Brett M. Averick and Jorge J. More'.
 #
 #     **********
-      double precision one, p01, zero
-      parameter (zero=0.d0,p01=1.0d-2,one=1.0d0)
+      const one_ = one(Float64)
+      const zero_ = zero(Float64)
+      const p01 = 1.0e-2
 
       integer i, j
       double precision e, s, sm, temp, w, wm, ynorm, znorm
@@ -68,15 +69,15 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
       external dasum, daxpy, dnrm2, dscal
 
       do i = 1, n
-         z(i) = zero
+         z(i) = zero_
       end do
 
 #     This choice of e makes the algorithm scale invariant.
 
       e = abs(r(1,1))
-      if (e .eq. zero) then
-         svmin = zero
-         z(1) = one
+      if (e .eq. zero_) then
+         svmin = zero_
+         z(1) = one_
          return
       end if
 
@@ -95,9 +96,9 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #        Determine the two possible choices of y(i).
 
-         if (r(i,i) .eq. zero) then
-            w = one
-            wm = one
+         if (r(i,i) .eq. zero_) then
+            w = one_
+            wm = one_
          else
             w = (e-z(i))/r(i,i)
             wm = -(e+z(i))/r(i,i)
@@ -136,8 +137,8 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
             call dscal(n,temp,z,1)
             ynorm = temp*ynorm
          end if
-         if (r(j,j) .eq. zero) then
-            z(j) = one
+         if (r(j,j) .eq. zero_) then
+            z(j) = one_
          else
             z(j) = z(j)/r(j,j)
          end if
@@ -148,7 +149,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #     Compute svmin and normalize z.
 
-      znorm = one/dnrm2(n,z,1)
+      znorm = one_/dnrm2(n,z,1)
       svmin = ynorm*znorm
       call dscal(n,znorm,z,1)
 
