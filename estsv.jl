@@ -116,7 +116,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
          if (s < sm)
             temp = wm - w
             w = wm
-            if (i < n) BLAS.axpy!(n-i,temp,r[i,i+1],ldr,z[i+1],1)
+            if (i < n) BLAS.axpy!(n-i,temp,r[i,i+1],ldr,z[i+1],1) end
          end
          z[i] = w
 
