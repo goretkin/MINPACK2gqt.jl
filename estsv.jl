@@ -69,15 +69,15 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
       external dasum, daxpy, dnrm2, dscal
 
       do i = 1, n
-         z(i) = zero_
+         z[i] = zero_
       end do
 
 #     This choice of e makes the algorithm scale invariant.
 
-      e = abs(r(1,1))
+      e = abs(r[1,1])
       if (e .eq. zero_) then
          svmin = zero_
-         z(1) = one_
+         z[1] = one_
          return
       end if
 
@@ -87,40 +87,40 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #        Scale y. The factor of 0.01 reduces the number of scalings.
 
-         e = sign(e,-z(i))
-         if (abs(e-z(i)) .gt. abs(r(i,i))) then
-            temp = min(p01,abs(r(i,i))/abs(e-z(i)))
+         e = sign(e,-z[i])
+         if (abs(e-z[i]) .gt. abs(r[i,i])) then
+            temp = min(p01,abs(r[i,i])/abs(e-z[i]))
             call dscal(n,temp,z,1)
             e = temp*e
          end if
 
 #        Determine the two possible choices of y(i).
 
-         if (r(i,i) .eq. zero_) then
+         if (r[i,i] .eq. zero_) then
             w = one_
             wm = one_
          else
-            w = (e-z(i))/r(i,i)
-            wm = -(e+z(i))/r(i,i)
+            w = (e-z[i])/r[i,i]
+            wm = -(e+z[i])/r[i,i]
          end if
 
 #        Choose y(i) based on the predicted value of y(j) for j > i.
 
-         s = abs(e-z(i))
-         sm = abs(e+z(i))
+         s = abs(e-z[i])
+         sm = abs(e+z[i])
          do j = i + 1, n
-            sm = sm + abs(z(j)+wm*r(i,j))
+            sm = sm + abs(z[j]+wm*r[i,j])
          end do
          if (i .lt. n) then
-            call daxpy(n-i,w,r(i,i+1),ldr,z(i+1),1)
-            s = s + dasum(n-i,z(i+1),1)
+            call daxpy(n-i,w,r[i,i+1],ldr,z[i+1],1)
+            s = s + dasum(n-i,z[i+1],1)
          end if
          if (s .lt. sm) then
             temp = wm - w
             w = wm
-            if (i .lt. n) call daxpy(n-i,temp,r(i,i+1),ldr,z(i+1),1)
+            if (i .lt. n) call daxpy(n-i,temp,r[i,i+1],ldr,z[i+1],1)
          end if
-         z(i) = w
+         z[i] = w
 
       end do
 
@@ -132,18 +132,18 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #        Scale z.
 
-         if (abs(z(j)) .gt. abs(r(j,j))) then
-            temp = min(p01,abs(r(j,j))/abs(z(j)))
+         if (abs(z[j]) .gt. abs(r[j,j])) then
+            temp = min(p01,abs(r[j,j])/abs(z[j]))
             call dscal(n,temp,z,1)
             ynorm = temp*ynorm
          end if
-         if (r(j,j) .eq. zero_) then
-            z(j) = one_
+         if (r[j,j] .eq. zero_) then
+            z[j] = one_
          else
-            z(j) = z(j)/r(j,j)
+            z[j] = z[j]/r[j,j]
          end if
-         temp = -z(j)
-         call daxpy(j-1,temp,r(1,j),1,z,1)
+         temp = -z[j]
+         call daxpy(j-1,temp,r[1,j],1,z,1)
 
       end do
 
