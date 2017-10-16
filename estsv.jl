@@ -65,8 +65,6 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
       integer i, j
       double precision e, s, sm, temp, w, wm, ynorm, znorm
 
-      double precision dasum, dnrm2
-      external dasum, daxpy, dnrm2, dscal
 
       for i = 1:n
          z[i] = zero_
@@ -90,7 +88,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
          e = sign(e,-z[i])
          if (abs(e-z[i]) > abs(r[i,i]))
             temp = min(p01,abs(r[i,i])/abs(e-z[i]))
-            call dscal(n,temp,z,1)
+            BLAS.scal!(n,temp,z,1)
             e = temp*e
          end
 
@@ -112,19 +110,19 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
             sm = sm + abs(z[j]+wm*r[i,j])
          end
          if (i < n)
-            call daxpy(n-i,w,r[i,i+1],ldr,z[i+1],1)
-            s = s + dasum(n-i,z[i+1],1)
+            BLAS.axpy!(n-i,w,r[i,i+1],ldr,z[i+1],1)
+            s = s + BLAS.asum(n-i,z[i+1],1)
          end
          if (s < sm)
             temp = wm - w
             w = wm
-            if (i < n) call daxpy(n-i,temp,r[i,i+1],ldr,z[i+1],1)
+            if (i < n) BLAS.axpy!(n-i,temp,r[i,i+1],ldr,z[i+1],1)
          end
          z[i] = w
 
       end
 
-      ynorm = dnrm2(n,z,1)
+      ynorm = BLAS.nrm2(n,z,1)
 
 #     Solve R*z = y.
 
@@ -134,7 +132,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
          if (abs(z[j]) > abs(r[j,j]))
             temp = min(p01,abs(r[j,j])/abs(z[j]))
-            call dscal(n,temp,z,1)
+            BLAS.scal!(n,temp,z,1)
             ynorm = temp*ynorm
          end
          if (r[j,j] == zero_)
@@ -143,14 +141,14 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
             z[j] = z[j]/r[j,j]
          end
          temp = -z[j]
-         call daxpy(j-1,temp,r[1,j],1,z,1)
+         BLAS.axpy!(j-1,temp,r[1,j],1,z,1)
 
       end
 
 #     Compute svmin and normalize z.
 
-      znorm = one_/dnrm2(n,z,1)
+      znorm = one_/BLAS.nrm2(n,z,1)
       svmin = ynorm*znorm
-      call dscal(n,znorm,z,1)
+      BLAS.scal!(n,znorm,z,1)
 
       end
