@@ -2,10 +2,10 @@
       integer ldr, n
       double precision svmin
       double precision r(ldr,n), z(n)
-      
+
 c Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
 c see CopyrightMINPACK.txt
-c  
+c
 c     **********
 c
 c     Subroutine destsv
