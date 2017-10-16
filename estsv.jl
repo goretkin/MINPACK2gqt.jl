@@ -68,84 +68,84 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
       double precision dasum, dnrm2
       external dasum, daxpy, dnrm2, dscal
 
-      do i = 1, n
+      for i = 1, n
          z[i] = zero_
-      end do
+      end
 
 #     This choice of e makes the algorithm scale invariant.
 
       e = abs(r[1,1])
-      if (e .eq. zero_) then
+      if (e .eq. zero_)
          svmin = zero_
          z[1] = one_
          return
-      end if
+      end
 
 #     Solve R'*y = e.
 
-      do i = 1, n
+      for i = 1, n
 
 #        Scale y. The factor of 0.01 reduces the number of scalings.
 
          e = sign(e,-z[i])
-         if (abs(e-z[i]) .gt. abs(r[i,i])) then
+         if (abs(e-z[i]) .gt. abs(r[i,i]))
             temp = min(p01,abs(r[i,i])/abs(e-z[i]))
             call dscal(n,temp,z,1)
             e = temp*e
-         end if
+         end
 
 #        Determine the two possible choices of y(i).
 
-         if (r[i,i] .eq. zero_) then
+         if (r[i,i] .eq. zero_)
             w = one_
             wm = one_
          else
             w = (e-z[i])/r[i,i]
             wm = -(e+z[i])/r[i,i]
-         end if
+         end
 
 #        Choose y(i) based on the predicted value of y(j) for j > i.
 
          s = abs(e-z[i])
          sm = abs(e+z[i])
-         do j = i + 1, n
+         for j = i + 1, n
             sm = sm + abs(z[j]+wm*r[i,j])
-         end do
-         if (i .lt. n) then
+         end
+         if (i .lt. n)
             call daxpy(n-i,w,r[i,i+1],ldr,z[i+1],1)
             s = s + dasum(n-i,z[i+1],1)
-         end if
-         if (s .lt. sm) then
+         end
+         if (s .lt. sm)
             temp = wm - w
             w = wm
             if (i .lt. n) call daxpy(n-i,temp,r[i,i+1],ldr,z[i+1],1)
-         end if
+         end
          z[i] = w
 
-      end do
+      end
 
       ynorm = dnrm2(n,z,1)
 
 #     Solve R*z = y.
 
-      do j = n, 1, -1
+      for j = n, 1, -1
 
 #        Scale z.
 
-         if (abs(z[j]) .gt. abs(r[j,j])) then
+         if (abs(z[j]) .gt. abs(r[j,j]))
             temp = min(p01,abs(r[j,j])/abs(z[j]))
             call dscal(n,temp,z,1)
             ynorm = temp*ynorm
-         end if
-         if (r[j,j] .eq. zero_) then
+         end
+         if (r[j,j] .eq. zero_)
             z[j] = one_
          else
             z[j] = z[j]/r[j,j]
-         end if
+         end
          temp = -z[j]
          call daxpy(j-1,temp,r[1,j],1,z,1)
 
-      end do
+      end
 
 #     Compute svmin and normalize z.
 
