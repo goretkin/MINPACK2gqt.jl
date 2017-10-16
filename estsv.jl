@@ -75,7 +75,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 #     This choice of e makes the algorithm scale invariant.
 
       e = abs(r[1,1])
-      if (e .eq. zero_)
+      if (e == zero_)
          svmin = zero_
          z[1] = one_
          return
@@ -88,7 +88,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 #        Scale y. The factor of 0.01 reduces the number of scalings.
 
          e = sign(e,-z[i])
-         if (abs(e-z[i]) .gt. abs(r[i,i]))
+         if (abs(e-z[i]) > abs(r[i,i]))
             temp = min(p01,abs(r[i,i])/abs(e-z[i]))
             call dscal(n,temp,z,1)
             e = temp*e
@@ -96,7 +96,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #        Determine the two possible choices of y(i).
 
-         if (r[i,i] .eq. zero_)
+         if (r[i,i] == zero_)
             w = one_
             wm = one_
          else
@@ -111,14 +111,14 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
          for j = (i + 1):n
             sm = sm + abs(z[j]+wm*r[i,j])
          end
-         if (i .lt. n)
+         if (i < n)
             call daxpy(n-i,w,r[i,i+1],ldr,z[i+1],1)
             s = s + dasum(n-i,z[i+1],1)
          end
-         if (s .lt. sm)
+         if (s < sm)
             temp = wm - w
             w = wm
-            if (i .lt. n) call daxpy(n-i,temp,r[i,i+1],ldr,z[i+1],1)
+            if (i < n) call daxpy(n-i,temp,r[i,i+1],ldr,z[i+1],1)
          end
          z[i] = w
 
@@ -132,12 +132,12 @@ function estsv(n::Integer,r::AbstractArray{Float64,1},ldr::Integer,svmin::Float6
 
 #        Scale z.
 
-         if (abs(z[j]) .gt. abs(r[j,j]))
+         if (abs(z[j]) > abs(r[j,j]))
             temp = min(p01,abs(r[j,j])/abs(z[j]))
             call dscal(n,temp,z,1)
             ynorm = temp*ynorm
          end
-         if (r[j,j] .eq. zero_)
+         if (r[j,j] == zero_)
             z[j] = one_
          else
             z[j] = z[j]/r[j,j]
