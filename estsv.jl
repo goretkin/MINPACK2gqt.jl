@@ -110,13 +110,13 @@ function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Float6
             sm = sm + abs(z[j]+wm*r[i,j])
          end
          if (i < n)
-            BLAS.axpy!(n-i,w,r[i,i+1],ldr,z[i+1],1)
-            s = s + BLAS.asum(n-i,z[i+1],1)
+            BLAS.axpy!(n-i,w,@aref(r[i,i+1]),ldr,@aref(z[i+1]),1)
+            s = s + BLAS.asum(n-i,@aref(z[i+1]),1)
          end
          if (s < sm)
             temp = wm - w
             w = wm
-            if (i < n) BLAS.axpy!(n-i,temp,r[i,i+1],ldr,z[i+1],1) end
+            if (i < n) BLAS.axpy!(n-i,temp,@aref(r[i,i+1]),ldr,@aref(z[i+1]),1) end
          end
          z[i] = w
 
@@ -141,7 +141,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Float6
             z[j] = z[j]/r[j,j]
          end
          temp = -z[j]
-         BLAS.axpy!(j-1,temp,r[1,j],1,z,1)
+         BLAS.axpy!(j-1,temp,@aref(r[1,j]),1,pointer(z),1)
 
       end
 
