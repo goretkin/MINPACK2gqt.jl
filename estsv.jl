@@ -1,5 +1,9 @@
-function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Float64,z::AbstractArray{Float64,1})
+function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Ptr{Float64},z::AbstractArray{Float64,1})
       #TODO assert size(r) == (ldr,n), size(z) == (n)
+
+## Empiracally this implements
+## _, S, V = svd(full(UpperTriangular(r))
+## svmin = S[end], z = ±V[:,end]
 
 # Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
 # see CopyrightMINPACK.txt
@@ -74,7 +78,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Float6
 
       e = abs(r[1,1])
       if (e == zero_)
-         svmin = zero_
+         Base.unsafe_store!(svmin, zero_)
          z[1] = one_
          return
       end
@@ -148,7 +152,7 @@ function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Float6
 #     Compute svmin and normalize z.
 
       znorm = one_/BLAS.nrm2(n,z,1)
-      svmin = ynorm*znorm
+      Base.unsafe_store!(svmin, ynorm*znorm)
       BLAS.scal!(n,znorm,z,1)
 
       end
