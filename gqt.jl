@@ -1,5 +1,4 @@
-subroutine dgqt(n,a,lda,b,delta,rtol,atol,itmax,par,f,x,info,z,
-+                wa1,wa2)
+subroutine dgqt(n,a,lda,b,delta,rtol,atol,itmax,par,f,x,info,z,wa1,wa2)
 integer n, lda, itmax, info
 double precision delta, rtol, atol, par, f
 double precision a(lda,n), b(n), x(n), z(n), wa1(n), wa2(n)
@@ -141,8 +140,7 @@ parameter (zero=0.0d0,p001=1.0d-3,p5=0.5d0,one=1.0d0)
 
 logical rednc
 integer indef, iter, j
-double precision alpha, anorm, bnorm, parc, parf, parl, pars,
-+                 paru, prod, rxnorm, rznorm, temp, xnorm
+double precision alpha, anorm, bnorm, parc, parf, parl, pars, paru, prod, rxnorm, rznorm, temp, xnorm
 
 double precision dasum, ddot, dnrm2
 external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
@@ -210,8 +208,7 @@ do iter = 1, itmax
 
 c        Safeguard par.
 
-   if (par .le. pars .and. paru .gt. zero) par = max(p001,
-+       sqrt(parl/paru))*paru
+   if (par .le. pars .and. paru .gt. zero) par = max(p001, sqrt(parl/paru))*paru
 
 c        Copy the lower triangle of A into its upper triangle and
 c        compute A + par*I.
@@ -246,9 +243,7 @@ c           last value of par with A + par*I positive definite.
 
 c           Test for convergence.
 
-      if (abs(xnorm-delta) .le. rtol*delta .or.
-+          (par .eq. zero .and. xnorm .le. (one+rtol)*delta))
-+          info = 1
+      if (abs(xnorm-delta) .le. rtol*delta .or. (par .eq. zero .and. xnorm .le. (one+rtol)*delta)) info = 1
 
 c           Compute a direction of negative curvature and use this
 c           information to improve pars.
@@ -273,16 +268,13 @@ c              Test to decide if the negative curvature step
 c              produces a larger reduction than with z = 0.
 
          rznorm = abs(alpha)*rznorm
-         if ((rznorm/delta)**2+par*(xnorm/delta)**2 .le.
-+             par) rednc = .true.
+         if ((rznorm/delta)**2+par*(xnorm/delta)**2 .le. par) rednc = .true.
 
 c              Test for convergence.
 
-         if (p5*(rznorm/delta)**2 .le.
-+             rtol*(one-p5*rtol)*(par+(rxnorm/delta)**2)) then
+         if (p5*(rznorm/delta)**2 .le. rtol*(one-p5*rtol)*(par+(rxnorm/delta)**2)) then
             info = 1
-         else if (p5*(par+(rxnorm/delta)**2) .le.
-+                  (atol/delta)/delta .and. info .eq. 0) then
+         else if (p5*(par+(rxnorm/delta)**2) .le. (atol/delta)/delta .and. info .eq. 0) then
             info = 2
          end if
       end if
