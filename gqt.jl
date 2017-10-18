@@ -264,7 +264,7 @@ for iter = 1:itmax
 #              produces a larger reduction than with z = 0.
 
          rznorm = abs(alpha)*rznorm
-         if ((rznorm/delta)^2+par*(xnorm/delta)^2 <= par) rednc = true
+         if ((rznorm/delta)^2+par*(xnorm/delta)^2 <= par) rednc = true end
 
 #              Test for convergence.
 
@@ -359,7 +359,7 @@ for iter = 1:itmax
          BLAS.copy!(n-j,a[j+1,j],1,a[j,j+1],lda)
       end
       BLAS.copy!(n,wa1,1,a,lda+1)
-      z[1] = iter ! SBP: modification to return number of iterations
+      z[1] = iter # SBP: modification to return number of iterations
       return
    end
 
