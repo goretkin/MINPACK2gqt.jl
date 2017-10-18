@@ -138,8 +138,8 @@ const p5 = 0.5
 
 iter = 0
 
-integer indef
-double precision rznorm
+indef = 0
+rznorm = 0
 
 # double precision dasum, ddot, dnrm2
 # external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
