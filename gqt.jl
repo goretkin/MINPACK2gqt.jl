@@ -1,4 +1,4 @@
-function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Int,par_::Ptr{Float64},f_::Ptr{Float64},x::DenseArray{Float64,1},info_::Ptr{Int},z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
+function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Int,par_::Ref{Float64},f_::Ref{Float64},x::DenseArray{Float64,1},info_::Ref{Int},z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
 
 #
 # Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
@@ -140,18 +140,17 @@ const p5 = 0.5
 
 iter = 0
 
-indef = 0
 rznorm = 0.0
 
-par = Base.unsafe_load(par_)
-info = Base.unsafe_load(info_)
-f = Base.unsafe_load(f_)
+par = par_[]
+info = info_[]
+f = f_[]
 
 function store_out_params()
   # Must be called from all return sites
-  Base.unsafe_store!(par_, par)
-  Base.unsafe_store!(info_, info)
-  Base.unsafe_store!(f_, f)
+  par_[] = par
+  info_[] = info
+  f_[] = f
 end
 #     Initialization.
 

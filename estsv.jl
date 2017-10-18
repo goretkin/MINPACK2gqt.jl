@@ -1,4 +1,4 @@
-function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ptr{Float64},z::AbstractArray{Float64,1})
+function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ref{Float64},z::AbstractArray{Float64,1})
       #TODO assert size(r) == (ldr,n), size(z) == (n)
 
 ## Empiracally this implements
@@ -78,7 +78,7 @@ function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ptr{Float64},z
 
       e = abs(r[1,1])
       if (e == zero_)
-         Base.unsafe_store!(svmin, zero_)
+         svmin[] = zero_
          z[1] = one_
          return
       end
@@ -152,7 +152,7 @@ function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ptr{Float64},z
 #     Compute svmin and normalize z.
 
       znorm = one_/BLAS.nrm2(n,z,1)
-      Base.unsafe_store!(svmin, ynorm*znorm)
+      svmin[] = ynorm*znorm
       BLAS.scal!(n,znorm,z,1)
 
       end
