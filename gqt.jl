@@ -207,7 +207,7 @@ for iter = 1:itmax
 
 #        Safeguard par.
 
-   if (par .le. pars .and. paru .gt. zero(Float64)) par = max(p001, sqrt(parl/paru))*paru end
+   if (par <= pars && paru > zero(Float64)) par = max(p001, sqrt(parl/paru))*paru end
 
 #        Copy the lower triangle of A into its upper triangle and
 #        compute A + par*I.
@@ -226,7 +226,7 @@ for iter = 1:itmax
 
 #        Case 1: A + par*I is positive definite.
 
-   if (indef .eq. 0)
+   if (indef == 0)
 
 #           Compute an approximate solution x and save the
 #           last value of par with A + par*I positive definite.
@@ -242,7 +242,7 @@ for iter = 1:itmax
 
 #           Test for convergence.
 
-      if (abs(xnorm-delta) .le. rtol*delta .or. (par .eq. zero(Float64) .and. xnorm .le. (one(Float64)+rtol)*delta)) info = 1 end
+      if (abs(xnorm-delta) <= rtol*delta || (par == zero(Float64) && xnorm <= (one(Float64)+rtol)*delta)) info = 1 end
 
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
@@ -254,7 +254,7 @@ for iter = 1:itmax
 #           x + alpha*z where norm(x+alpha*z) = delta.
 
       rednc = .false.
-      if (xnorm .lt. delta)
+      if (xnorm < delta)
 
 #              Compute alpha
 
@@ -267,20 +267,20 @@ for iter = 1:itmax
 #              produces a larger reduction than with z = 0.
 
          rznorm = abs(alpha)*rznorm
-         if ((rznorm/delta)**2+par*(xnorm/delta)**2 .le. par) rednc = .true.
+         if ((rznorm/delta)**2+par*(xnorm/delta)**2 <= par) rednc = .true.
 
 #              Test for convergence.
 
-         if (p5*(rznorm/delta)**2 .le. rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)**2))
+         if (p5*(rznorm/delta)**2 <= rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)**2))
             info = 1
-         else if (p5*(par+(rxnorm/delta)**2) .le. (atol/delta)/delta .and. info .eq. 0)
+         else if (p5*(par+(rxnorm/delta)**2) <= (atol/delta)/delta && info == 0)
             info = 2
          end
       end
 
 #           Compute the Newton correction parc to par.
 
-      if (xnorm .eq. zero(Float64))
+      if (xnorm == zero(Float64))
          parc = -par
       else
          call dcopy(n,x,1,wa2,1)
@@ -293,8 +293,8 @@ for iter = 1:itmax
 
 #           Update parl or paru.
 
-      if (xnorm .gt. delta) parl = max(parl,par) end
-      if (xnorm .lt. delta) paru = min(paru,par) end
+      if (xnorm > delta) parl = max(parl,par) end
+      if (xnorm < delta) paru = min(paru,par) end
    else
 
 #           Case 2: A + par*I is not positive definite.
@@ -302,7 +302,7 @@ for iter = 1:itmax
 #           Use the rank information from the Cholesky
 #           decomposition to update par.
 
-      if (indef .gt. 1)
+      if (indef > 1)
 
 #              Restore column indef to A + par*I.
 
@@ -336,16 +336,16 @@ for iter = 1:itmax
 
 #        Test for termination.
 
-   if (info .eq. 0)
-      if (iter .eq. itmax) info = 4 end
-      if (paru .le. (one(Float64)+p5*rtol)*pars) info = 3 end
-      if (paru .eq. zero(Float64)) info = 2 end
+   if (info == 0)
+      if (iter == itmax) info = 4 end
+      if (paru <= (one(Float64)+p5*rtol)*pars) info = 3 end
+      if (paru == zero(Float64)) info = 2 end
    end
 
 #        If exiting, store the best approximation and restore
 #        the upper triangle of A.
 
-   if (info .ne. 0)
+   if (info != 0)
 
 #           Compute the best current estimates for x and f.
 
