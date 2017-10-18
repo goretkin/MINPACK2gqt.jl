@@ -1,4 +1,4 @@
-function gqt(n::Integer,a::DenseArray{Float64,2},lda::Integer,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Integer,par::Float64,f::Float64,x::DenseArray{Float64,1},info::Integer,z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
+function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Int,par_::Ptr{Float64},f_::Ptr{Float64},x::DenseArray{Float64,1},info_::Ptr{Int},z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
 
 #
 # Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
@@ -133,14 +133,26 @@ function gqt(n::Integer,a::DenseArray{Float64,2},lda::Integer,b::DenseArray{Floa
 #     Brett M. Averick, Richard Carter, and Jorge J. More'
 #
 #     ***********
+
+
 const p001 = 1.0
 const p5 = 0.5
 
 iter = 0
 
 indef = 0
-rznorm = 0
+rznorm = 0.0
 
+par = Base.unsafe_load(par_)
+info = Base.unsafe_load(info_)
+f = Base.unsafe_load(f_)
+
+function store_out_params()
+  # Must be called from all return sites
+  Base.unsafe_store!(par_, par)
+  Base.unsafe_store!(info_, info)
+  Base.unsafe_store!(f_, f)
+end
 #     Initialization.
 
 parf = zero(Float64)
@@ -154,9 +166,9 @@ end
 
 #     Copy the diagonal and save A in its lower triangle.
 
-#all dcopy(n,a,lda+1,wa1,1)
+BLAS.blascopy!(n,a,lda+1,wa1,1)
 for j = 1:(n - 1)
-   BLAS.copy!(n-j,@aref(a[j,j+1]),lda,@aref(a[j+1,j]),1)
+   BLAS.blascopy!(n-j,@aref(a[j,j+1]),lda,@aref(a[j+1,j]),1)
 end
 
 #     Calculate the l1-norm of A, the Gershgorin row sums,
@@ -210,7 +222,7 @@ for iter = 1:itmax
 #        compute A + par*I.
 
    for j = 1:(n - 1)
-      BLAS.copy!(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
+      BLAS.blascopy!(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
    end
    for j = 1:n
       a[j,j] = wa1[j] + par
@@ -219,7 +231,7 @@ for iter = 1:itmax
 #        Attempt the  Cholesky factorization of A without referencing
 #        the lower triangular part.
 
-   LAPACK.potrf!('U',n,a,lda,indef)
+   _, indef = LAPACK.potrf!('U', a)
 
 #        Case 1: A + par*I is positive definite.
 
@@ -229,11 +241,11 @@ for iter = 1:itmax
 #           last value of par with A + par*I positive definite.
 
       parf = par
-      BLAS.copy!(n,b,1,wa2,1)
-      BLAS.trsv!('U','T','N',n,a,lda,wa2,1)
-      rxnorm = BlAS.nrm2(n,wa2,1)
-      BLAS.trsv!('U','N','N',n,a,lda,wa2,1)
-      BLAS.copy!(n,wa2,1,x,1)
+      BLAS.blascopy!(n,b,1,wa2,1)
+      BLAS.trsv!('U','T','N',a,wa2)
+      rxnorm = BLAS.nrm2(n,wa2,1)
+      BLAS.trsv!('U','N','N',a,wa2)
+      BLAS.blascopy!(n,wa2,1,x,1)
       BLAS.scal!(n,-one(Float64),x,1)
       xnorm = BLAS.nrm2(n,x,1)
 
@@ -244,13 +256,16 @@ for iter = 1:itmax
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
 
-      estsv(n,a,lda,rznorm,z) #TODO out args
+      estsv(n,a,lda,Ptr{Float64}(pointer_from_objref(rznorm)),z)
+
+
       pars = max(pars,par-rznorm^2)
 
 #           Compute a negative curvature solution of the form
 #           x + alpha*z where norm(x+alpha*z) = delta.
 
       rednc = false
+
       if (xnorm < delta)
 
 #              Compute alpha
@@ -258,7 +273,7 @@ for iter = 1:itmax
          prod = BLAS.dot(n,z,1,x,1)/delta
          temp = (delta-xnorm)*((delta+xnorm)/delta)
          alpha = temp/(abs(prod)+sqrt(prod^2+temp/delta))
-         alpha = sign(alpha,prod)
+         alpha = copysign(alpha,prod)
 
 #              Test to decide if the negative curvature step
 #              produces a larger reduction than with z = 0.
@@ -280,10 +295,10 @@ for iter = 1:itmax
       if (xnorm == zero(Float64))
          parc = -par
       else
-         BLAS.copy!(n,x,1,wa2,1)
+         BLAS.blascopy!(n,x,1,wa2,1)
          temp = one(Float64)/xnorm
          BLAS.scal!(n,temp,wa2,1)
-         BLAS.trsv!('U','T','N',n,a,lda,wa2,1)
+         BLAS.trsv!('U','T','N',a,wa2)
          temp = BLAS.nrm2(n,wa2,1)
          parc = (((xnorm-delta)/delta)/temp)/temp
       end
@@ -303,17 +318,17 @@ for iter = 1:itmax
 
 #              Restore column indef to A + par*I.
 
-         BLAS.copy!(indef-1,@aref(a[indef,1]),lda,@aref(a[1,indef]),1)
+         BLAS.blascopy!(indef-1,@aref(a[indef,1]),lda,@aref(a[1,indef]),1)
          a[indef,indef] = wa1[indef] + par
 
 #              Compute parc.
 
-         BLAS.copy!(indef-1,@aref(a[1,indef]),1,pointer(wa2),1)
-         BLAS.trsv!('U','T','N',indef-1,a,lda,wa2,1)
-         BLAS.copy!(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
+         BLAS.blascopy!(indef-1,@aref(a[1,indef]),1,pointer(wa2),1)
+         BLAS.trsv!('U','T','N',@view(a[:, 1:(indef-1)]),wa2) #TODO check that this view is accurate code before
+         BLAS.blascopy!(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
          temp = BLAS.nrm2(indef-1,@aref(a[1,indef]),1)
          a[indef,indef] = a[indef,indef] - temp^2
-         BLAS.trsv!('U','N','N',indef-1,a,lda,wa2,1)
+         BLAS.trsv!('U','N','N',@view(a[:, 1:(indef-1)]),wa2) #TODO check
       end
       wa2[indef] = -one(Float64)
       temp = BLAS.nrm2(indef,wa2,1)
@@ -342,6 +357,7 @@ for iter = 1:itmax
 #        If exiting, store the best approximation and restore
 #        the upper triangle of A.
 
+
    if (info != 0)
 
 #           Compute the best current estimates for x and f.
@@ -356,10 +372,14 @@ for iter = 1:itmax
 #           Restore the upper triangle of A.
 
       for j = 1:(n - 1)
-         BLAS.copy!(n-j,a[j+1,j],1,a[j,j+1],lda)
+         BLAS.blascopy!(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
       end
-      BLAS.copy!(n,wa1,1,a,lda+1)
+
+      BLAS.blascopy!(n,wa1,1,a,lda+1)
+
       z[1] = iter # SBP: modification to return number of iterations
+      store_out_params()
+
       return
    end
 
@@ -370,5 +390,7 @@ for iter = 1:itmax
 #        End of an iteration.
 
 end
+
+store_out_params()
 
 end
