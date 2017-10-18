@@ -138,8 +138,6 @@ const p5 = 0.5
 
 iter = 0
 
-rznorm = 0.0
-
 par = par_[]
 info = info_[]
 f = f_[]
@@ -252,9 +250,9 @@ for iter = 1:itmax
 
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
-
-      estsv(n,a,lda,Ptr{Float64}(pointer_from_objref(rznorm)),z)
-
+      rznorm_ = Ref{Float64}()
+      estsv(n,a,lda,rznorm_,z)
+      rznorm = rznorm_[]
 
       pars = max(pars,par-rznorm^2)
 
