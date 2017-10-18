@@ -3,4 +3,5 @@ module Minpack2
   using .FortranHelp
   #import FortranHelp: @aref
   include("estsv.jl")
+  include("gqt.jl")
 end
