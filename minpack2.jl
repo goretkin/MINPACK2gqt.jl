@@ -1,5 +1,5 @@
 module Minpack2
-  include("FortranHelp.jl")
+  include("fortran_help.jl")
   using .FortranHelp
   #import FortranHelp: @aref
   include("estsv.jl")
