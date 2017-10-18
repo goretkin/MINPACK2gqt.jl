@@ -141,9 +141,6 @@ iter = 0
 indef = 0
 rznorm = 0
 
-# double precision dasum, ddot, dnrm2
-# external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
-
 #     Initialization.
 
 parf = zero(Float64)
@@ -159,7 +156,7 @@ end
 
 #all dcopy(n,a,lda+1,wa1,1)
 for j = 1:(n - 1)
-   call dcopy(n-j,@aref(a[j,j+1]),lda,@aref(a[j+1,j]),1)
+   BLAS.copy!(n-j,@aref(a[j,j+1]),lda,@aref(a[j+1,j]),1)
 end
 
 #     Calculate the l1-norm of A, the Gershgorin row sums,
@@ -167,13 +164,13 @@ end
 
 anorm = zero(Float64)
 for j = 1:n
-   wa2[j] = dasum(n,@aref(a[1,j]),1)
+   wa2[j] = BLAS.asum(n,@aref(a[1,j]),1)
    anorm = max(anorm,wa2[j])
 end
 for j = 1:n
    wa2[j] = wa2[j] - abs(wa1[j])
 end
-bnorm = dnrm2(n,b,1)
+bnorm = BLAS.nrm2(n,b,1)
 
 #     Calculate a lower bound, pars, for the domain of the problem.
 #     Also calculate an upper bound, paru, and a lower bound, parl,
@@ -213,7 +210,7 @@ for iter = 1:itmax
 #        compute A + par*I.
 
    for j = 1:(n - 1)
-      call dcopy(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
+      BLAS.copy!(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
    end
    for j = 1:n
       a[j,j] = wa1[j] + par
@@ -222,7 +219,7 @@ for iter = 1:itmax
 #        Attempt the  Cholesky factorization of A without referencing
 #        the lower triangular part.
 
-   call dpotrf('U',n,a,lda,indef)
+   LAPACK.potrf!('U',n,a,lda,indef)
 
 #        Case 1: A + par*I is positive definite.
 
@@ -232,13 +229,13 @@ for iter = 1:itmax
 #           last value of par with A + par*I positive definite.
 
       parf = par
-      call dcopy(n,b,1,wa2,1)
-      call dtrsv('U','T','N',n,a,lda,wa2,1)
-      rxnorm = dnrm2(n,wa2,1)
-      call dtrsv('U','N','N',n,a,lda,wa2,1)
-      call dcopy(n,wa2,1,x,1)
-      call dscal(n,-one(Float64),x,1)
-      xnorm = dnrm2(n,x,1)
+      BLAS.copy!(n,b,1,wa2,1)
+      BLAS.trsv!('U','T','N',n,a,lda,wa2,1)
+      rxnorm = BlAS.nrm2(n,wa2,1)
+      BLAS.trsv!('U','N','N',n,a,lda,wa2,1)
+      BLAS.copy!(n,wa2,1,x,1)
+      BLAS.scal!(n,-one(Float64),x,1)
+      xnorm = BLAS.nrm2(n,x,1)
 
 #           Test for convergence.
 
@@ -247,7 +244,7 @@ for iter = 1:itmax
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
 
-      call destsv(n,a,lda,rznorm,z)
+      estsv(n,a,lda,rznorm,z) #TODO out args
       pars = max(pars,par-rznorm**2)
 
 #           Compute a negative curvature solution of the form
@@ -258,7 +255,7 @@ for iter = 1:itmax
 
 #              Compute alpha
 
-         prod = ddot(n,z,1,x,1)/delta
+         prod = BLAS.dot(n,z,1,x,1)/delta
          temp = (delta-xnorm)*((delta+xnorm)/delta)
          alpha = temp/(abs(prod)+sqrt(prod**2+temp/delta))
          alpha = sign(alpha,prod)
@@ -283,11 +280,11 @@ for iter = 1:itmax
       if (xnorm == zero(Float64))
          parc = -par
       else
-         call dcopy(n,x,1,wa2,1)
+         BLAS.copy!(n,x,1,wa2,1)
          temp = one(Float64)/xnorm
-         call dscal(n,temp,wa2,1)
-         call dtrsv('U','T','N',n,a,lda,wa2,1)
-         temp = dnrm2(n,wa2,1)
+         BLAS.scal!(n,temp,wa2,1)
+         BLAS.trsv!('U','T','N',n,a,lda,wa2,1)
+         temp = BLAS.nrm2(n,wa2,1)
          parc = (((xnorm-delta)/delta)/temp)/temp
       end
 
@@ -306,20 +303,20 @@ for iter = 1:itmax
 
 #              Restore column indef to A + par*I.
 
-         call dcopy(indef-1,@aref(a[indef,1]),lda,@aref(a[1,indef]),1)
+         BLAS.copy!(indef-1,@aref(a[indef,1]),lda,@aref(a[1,indef]),1)
          a[indef,indef] = wa1[indef] + par
 
 #              Compute parc.
 
-         call dcopy(indef-1,@aref(a[1,indef]),1,pointer(wa2),1)
-         call dtrsv('U','T','N',indef-1,a,lda,wa2,1)
-         call dcopy(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
-         temp = dnrm2(indef-1,@aref(a[1,indef]),1)
+         BLAS.copy!(indef-1,@aref(a[1,indef]),1,pointer(wa2),1)
+         BLAS.trsv!('U','T','N',indef-1,a,lda,wa2,1)
+         BLAS.copy!(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
+         temp = BLAS.nrm2(indef-1,@aref(a[1,indef]),1)
          a[indef,indef] = a[indef,indef] - temp**2
-         call dtrsv('U','N','N',indef-1,a,lda,wa2,1)
+         BLAS.trsv!('U','N','N',indef-1,a,lda,wa2,1)
       end
       wa2[indef] = -one(Float64)
-      temp = dnrm2(indef,wa2,1)
+      temp = BLAS.nrm2(indef,wa2,1)
       parc = -(a[indef,indef]/temp)/temp
       pars = max(pars,par+parc)
 
@@ -353,15 +350,15 @@ for iter = 1:itmax
       f = -p5*(rxnorm**2+par*xnorm**2)
       if (rednc)
          f = -p5*((rxnorm**2+par*delta**2)-rznorm**2)
-         call daxpy(n,alpha,z,1,x,1)
+         BLAS.axpy!(n,alpha,z,1,x,1)
       end
 
 #           Restore the upper triangle of A.
 
       for j = 1:(n - 1)
-         call dcopy(n-j,a[j+1,j],1,a[j,j+1],lda)
+         BLAS.copy!(n-j,a[j+1,j],1,a[j,j+1],lda)
       end
-      call dcopy(n,wa1,1,a,lda+1)
+      BLAS.copy!(n,wa1,1,a,lda+1)
       z[1] = iter ! SBP: modification to return number of iterations
       return
    end
