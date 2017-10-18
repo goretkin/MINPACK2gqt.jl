@@ -1,4 +1,4 @@
-function estsv(n::Integer,r::AbstractArray{Float64,2},ldr::Integer,svmin::Ptr{Float64},z::AbstractArray{Float64,1})
+function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ptr{Float64},z::AbstractArray{Float64,1})
       #TODO assert size(r) == (ldr,n), size(z) == (n)
 
 ## Empiracally this implements
