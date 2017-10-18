@@ -270,7 +270,7 @@ for iter = 1:itmax
 
          if (p5*(rznorm/delta)^2 <= rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)^2))
             info = 1
-         else if (p5*(par+(rxnorm/delta)^2) <= (atol/delta)/delta && info == 0)
+         elseif (p5*(par+(rxnorm/delta)^2) <= (atol/delta)/delta && info == 0)
             info = 2
          end
       end
