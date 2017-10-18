@@ -151,15 +151,15 @@ xnorm = zero(Float64)
 rxnorm = zero(Float64)
 rednc = false
 for j = 1:n
-   x(j) = zero(Float64)
-   z(j) = zero(Float64)
+   x[j] = zero(Float64)
+   z[j] = zero(Float64)
 end
 
 #     Copy the diagonal and save A in its lower triangle.
 
 #all dcopy(n,a,lda+1,wa1,1)
 for j = 1:(n - 1)
-   call dcopy(n-j,a(j,j+1),lda,a(j+1,j),1)
+   call dcopy(n-j,@aref(a[j,j+1]),lda,@aref(a[j+1,j]),1)
 end
 
 #     Calculate the l1-norm of A, the Gershgorin row sums,
@@ -167,11 +167,11 @@ end
 
 anorm = zero(Float64)
 for j = 1:n
-   wa2(j) = dasum(n,a(1,j),1)
-   anorm = max(anorm,wa2(j))
+   wa2[j] = dasum(n,@aref(a[1,j]),1)
+   anorm = max(anorm,wa2[j])
 end
 for j = 1:n
-   wa2(j) = wa2(j) - abs(wa1(j))
+   wa2[j] = wa2[j] - abs(wa1[j])
 end
 bnorm = dnrm2(n,b,1)
 
@@ -183,9 +183,9 @@ pars = -anorm
 parl = -anorm
 paru = -anorm
 for j = 1:n
-   pars = max(pars,-wa1(j))
-   parl = max(parl,wa1(j)+wa2(j))
-   paru = max(paru,-wa1(j)+wa2(j))
+   pars = max(pars,-wa1[j])
+   parl = max(parl,wa1[j]+wa2[j])
+   paru = max(paru,-wa1[j]+wa2[j])
 end
 parl = max(zero(Float64),bnorm/delta-parl,pars)
 paru = max(zero(Float64),bnorm/delta+paru)
@@ -213,10 +213,10 @@ for iter = 1:itmax
 #        compute A + par*I.
 
    for j = 1:(n - 1)
-      call dcopy(n-j,a(j+1,j),1,a(j,j+1),lda)
+      call dcopy(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
    end
    for j = 1:n
-      a(j,j) = wa1(j) + par
+      a[j,j] = wa1[j] + par
    end
 
 #        Attempt the  Cholesky factorization of A without referencing
@@ -306,21 +306,21 @@ for iter = 1:itmax
 
 #              Restore column indef to A + par*I.
 
-         call dcopy(indef-1,a(indef,1),lda,a(1,indef),1)
-         a(indef,indef) = wa1(indef) + par
+         call dcopy(indef-1,@aref(a[indef,1]),lda,@aref(a[1,indef]),1)
+         a[indef,indef] = wa1[indef] + par
 
 #              Compute parc.
 
-         call dcopy(indef-1,a(1,indef),1,wa2,1)
+         call dcopy(indef-1,@aref(a[1,indef]),1,pointer(wa2),1)
          call dtrsv('U','T','N',indef-1,a,lda,wa2,1)
-         call dcopy(indef-1,wa2,1,a(1,indef),1)
-         temp = dnrm2(indef-1,a(1,indef),1)
-         a(indef,indef) = a(indef,indef) - temp**2
+         call dcopy(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
+         temp = dnrm2(indef-1,@aref(a[1,indef]),1)
+         a[indef,indef] = a[indef,indef] - temp**2
          call dtrsv('U','N','N',indef-1,a,lda,wa2,1)
       end
-      wa2(indef) = -one(Float64)
+      wa2[indef] = -one(Float64)
       temp = dnrm2(indef,wa2,1)
-      parc = -(a(indef,indef)/temp)/temp
+      parc = -(a[indef,indef]/temp)/temp
       pars = max(pars,par+parc)
 
 #           If necessary, increase paru slightly.
@@ -359,10 +359,10 @@ for iter = 1:itmax
 #           Restore the upper triangle of A.
 
       for j = 1:(n - 1)
-         call dcopy(n-j,a(j+1,j),1,a(j,j+1),lda)
+         call dcopy(n-j,a[j+1,j],1,a[j,j+1],lda)
       end
       call dcopy(n,wa1,1,a,lda+1)
-      z(1) = iter ! SBP: modification to return number of iterations
+      z[1] = iter ! SBP: modification to return number of iterations
       return
    end
 
