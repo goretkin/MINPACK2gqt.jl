@@ -150,29 +150,29 @@ parf = zero(Float64)
 xnorm = zero(Float64)
 rxnorm = zero(Float64)
 rednc = .false.
-do j = 1, n
+for j = 1:n
    x(j) = zero(Float64)
    z(j) = zero(Float64)
-end do
+end
 
 #     Copy the diagonal and save A in its lower triangle.
 
 #all dcopy(n,a,lda+1,wa1,1)
-do j = 1, n - 1
+for j = 1:(n - 1)
    call dcopy(n-j,a(j,j+1),lda,a(j+1,j),1)
-end do
+end
 
 #     Calculate the l1-norm of A, the Gershgorin row sums,
 #     and the l2-norm of b.
 
 anorm = zero(Float64)
-do j = 1, n
+for j = 1:n
    wa2(j) = dasum(n,a(1,j),1)
    anorm = max(anorm,wa2(j))
-end do
-do j = 1, n
+end
+for j = 1:n
    wa2(j) = wa2(j) - abs(wa1(j))
-end do
+end
 bnorm = dnrm2(n,b,1)
 
 #     Calculate a lower bound, pars, for the domain of the problem.
@@ -182,11 +182,11 @@ bnorm = dnrm2(n,b,1)
 pars = -anorm
 parl = -anorm
 paru = -anorm
-do j = 1, n
+for j = 1:n
    pars = max(pars,-wa1(j))
    parl = max(parl,wa1(j)+wa2(j))
    paru = max(paru,-wa1(j)+wa2(j))
-end do
+end
 parl = max(zero(Float64),bnorm/delta-parl,pars)
 paru = max(zero(Float64),bnorm/delta+paru)
 
@@ -203,21 +203,21 @@ paru = max(paru,(one(Float64)+rtol)*parl)
 #     Beginning of an iteration.
 
 info = 0
-do iter = 1, itmax
+for iter = 1:itmax
 
 #        Safeguard par.
 
-   if (par .le. pars .and. paru .gt. zero(Float64)) par = max(p001, sqrt(parl/paru))*paru
+   if (par .le. pars .and. paru .gt. zero(Float64)) par = max(p001, sqrt(parl/paru))*paru end
 
 #        Copy the lower triangle of A into its upper triangle and
 #        compute A + par*I.
 
-   do j = 1, n - 1
+   for j = 1:(n - 1)
       call dcopy(n-j,a(j+1,j),1,a(j,j+1),lda)
-   end do
-   do j = 1, n
+   end
+   for j = 1:n
       a(j,j) = wa1(j) + par
-   end do
+   end
 
 #        Attempt the  Cholesky factorization of A without referencing
 #        the lower triangular part.
@@ -226,7 +226,7 @@ do iter = 1, itmax
 
 #        Case 1: A + par*I is positive definite.
 
-   if (indef .eq. 0) then
+   if (indef .eq. 0)
 
 #           Compute an approximate solution x and save the
 #           last value of par with A + par*I positive definite.
@@ -242,7 +242,7 @@ do iter = 1, itmax
 
 #           Test for convergence.
 
-      if (abs(xnorm-delta) .le. rtol*delta .or. (par .eq. zero(Float64) .and. xnorm .le. (one(Float64)+rtol)*delta)) info = 1
+      if (abs(xnorm-delta) .le. rtol*delta .or. (par .eq. zero(Float64) .and. xnorm .le. (one(Float64)+rtol)*delta)) info = 1 end
 
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
@@ -254,7 +254,7 @@ do iter = 1, itmax
 #           x + alpha*z where norm(x+alpha*z) = delta.
 
       rednc = .false.
-      if (xnorm .lt. delta) then
+      if (xnorm .lt. delta)
 
 #              Compute alpha
 
@@ -271,16 +271,16 @@ do iter = 1, itmax
 
 #              Test for convergence.
 
-         if (p5*(rznorm/delta)**2 .le. rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)**2)) then
+         if (p5*(rznorm/delta)**2 .le. rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)**2))
             info = 1
-         else if (p5*(par+(rxnorm/delta)**2) .le. (atol/delta)/delta .and. info .eq. 0) then
+         else if (p5*(par+(rxnorm/delta)**2) .le. (atol/delta)/delta .and. info .eq. 0)
             info = 2
-         end if
-      end if
+         end
+      end
 
 #           Compute the Newton correction parc to par.
 
-      if (xnorm .eq. zero(Float64)) then
+      if (xnorm .eq. zero(Float64))
          parc = -par
       else
          call dcopy(n,x,1,wa2,1)
@@ -289,12 +289,12 @@ do iter = 1, itmax
          call dtrsv('U','T','N',n,a,lda,wa2,1)
          temp = dnrm2(n,wa2,1)
          parc = (((xnorm-delta)/delta)/temp)/temp
-      end if
+      end
 
 #           Update parl or paru.
 
-      if (xnorm .gt. delta) parl = max(parl,par)
-      if (xnorm .lt. delta) paru = min(paru,par)
+      if (xnorm .gt. delta) parl = max(parl,par) end
+      if (xnorm .lt. delta) paru = min(paru,par) end
    else
 
 #           Case 2: A + par*I is not positive definite.
@@ -302,7 +302,7 @@ do iter = 1, itmax
 #           Use the rank information from the Cholesky
 #           decomposition to update par.
 
-      if (indef .gt. 1) then
+      if (indef .gt. 1)
 
 #              Restore column indef to A + par*I.
 
@@ -317,7 +317,7 @@ do iter = 1, itmax
          temp = dnrm2(indef-1,a(1,indef),1)
          a(indef,indef) = a(indef,indef) - temp**2
          call dtrsv('U','N','N',indef-1,a,lda,wa2,1)
-      end if
+      end
       wa2(indef) = -one(Float64)
       temp = dnrm2(indef,wa2,1)
       parc = -(a(indef,indef)/temp)/temp
@@ -328,7 +328,7 @@ do iter = 1, itmax
 #           paru is the optimal value of par.
 
       paru = max(paru,(one(Float64)+rtol)*pars)
-   end if
+   end
 
 #        Use pars to update parl.
 
@@ -336,35 +336,35 @@ do iter = 1, itmax
 
 #        Test for termination.
 
-   if (info .eq. 0) then
-      if (iter .eq. itmax) info = 4
-      if (paru .le. (one(Float64)+p5*rtol)*pars) info = 3
-      if (paru .eq. zero(Float64)) info = 2
-   end if
+   if (info .eq. 0)
+      if (iter .eq. itmax) info = 4 end
+      if (paru .le. (one(Float64)+p5*rtol)*pars) info = 3 end
+      if (paru .eq. zero(Float64)) info = 2 end
+   end
 
 #        If exiting, store the best approximation and restore
 #        the upper triangle of A.
 
-   if (info .ne. 0) then
+   if (info .ne. 0)
 
 #           Compute the best current estimates for x and f.
 
       par = parf
       f = -p5*(rxnorm**2+par*xnorm**2)
-      if (rednc) then
+      if (rednc)
          f = -p5*((rxnorm**2+par*delta**2)-rznorm**2)
          call daxpy(n,alpha,z,1,x,1)
-      end if
+      end
 
 #           Restore the upper triangle of A.
 
-      do j = 1, n - 1
+      for j = 1:(n - 1)
          call dcopy(n-j,a(j+1,j),1,a(j,j+1),lda)
-      end do
+      end
       call dcopy(n,wa1,1,a,lda+1)
       z(1) = iter ! SBP: modification to return number of iterations
       return
-   end if
+   end
 
 #        Compute an improved estimate for par.
 
@@ -372,6 +372,6 @@ do iter = 1, itmax
 
 #        End of an iteration.
 
-end do
+end
 
 end
