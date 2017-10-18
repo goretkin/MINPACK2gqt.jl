@@ -1,7 +1,5 @@
-subroutine dgqt(n,a,lda,b,delta,rtol,atol,itmax,par,f,x,info,z,wa1,wa2)
-integer n, lda, itmax, info
-double precision delta, rtol, atol, par, f
-double precision a(lda,n), b(n), x(n), z(n), wa1(n), wa2(n)
+function gqt(n::Integer,a::DenseArray{Float64,2},lda::Integer,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Integer,par::Float64,f::Float64,x::DenseArray{Float64,1},info::Integer,z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
+
 #
 # Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
 # see CopyrightMINPACK.txt
@@ -135,8 +133,8 @@ double precision a(lda,n), b(n), x(n), z(n), wa1(n), wa2(n)
 #     Brett M. Averick, Richard Carter, and Jorge J. More'
 #
 #     ***********
-double precision one, p001, p5, zero
-parameter (zero=0.0d0,p001=1.0d-3,p5=0.5d0,one=1.0d0)
+double precision p001, p5
+parameter (p001=1.0d-3,p5=0.5d0)
 
 logical rednc
 integer indef, iter, j
@@ -147,13 +145,13 @@ external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
 
 #     Initialization.
 
-parf = zero
-xnorm = zero
-rxnorm = zero
+parf = zero(Float64)
+xnorm = zero(Float64)
+rxnorm = zero(Float64)
 rednc = .false.
 do j = 1, n
-   x(j) = zero
-   z(j) = zero
+   x(j) = zero(Float64)
+   z(j) = zero(Float64)
 end do
 
 #     Copy the diagonal and save A in its lower triangle.
@@ -166,7 +164,7 @@ end do
 #     Calculate the l1-norm of A, the Gershgorin row sums,
 #     and the l2-norm of b.
 
-anorm = zero
+anorm = zero(Float64)
 do j = 1, n
    wa2(j) = dasum(n,a(1,j),1)
    anorm = max(anorm,wa2(j))
@@ -188,8 +186,8 @@ do j = 1, n
    parl = max(parl,wa1(j)+wa2(j))
    paru = max(paru,-wa1(j)+wa2(j))
 end do
-parl = max(zero,bnorm/delta-parl,pars)
-paru = max(zero,bnorm/delta+paru)
+parl = max(zero(Float64),bnorm/delta-parl,pars)
+paru = max(zero(Float64),bnorm/delta+paru)
 
 #     If the input par lies outside of the interval (parl,paru),
 #     set par to the closer endpoint.
@@ -199,7 +197,7 @@ par = min(par,paru)
 
 #     Special case: parl = paru.
 
-paru = max(paru,(one+rtol)*parl)
+paru = max(paru,(one(Float64)+rtol)*parl)
 
 #     Beginning of an iteration.
 
@@ -208,7 +206,7 @@ do iter = 1, itmax
 
 #        Safeguard par.
 
-   if (par .le. pars .and. paru .gt. zero) par = max(p001, sqrt(parl/paru))*paru
+   if (par .le. pars .and. paru .gt. zero(Float64)) par = max(p001, sqrt(parl/paru))*paru
 
 #        Copy the lower triangle of A into its upper triangle and
 #        compute A + par*I.
@@ -238,12 +236,12 @@ do iter = 1, itmax
       rxnorm = dnrm2(n,wa2,1)
       call dtrsv('U','N','N',n,a,lda,wa2,1)
       call dcopy(n,wa2,1,x,1)
-      call dscal(n,-one,x,1)
+      call dscal(n,-one(Float64),x,1)
       xnorm = dnrm2(n,x,1)
 
 #           Test for convergence.
 
-      if (abs(xnorm-delta) .le. rtol*delta .or. (par .eq. zero .and. xnorm .le. (one+rtol)*delta)) info = 1
+      if (abs(xnorm-delta) .le. rtol*delta .or. (par .eq. zero(Float64) .and. xnorm .le. (one(Float64)+rtol)*delta)) info = 1
 
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
@@ -272,7 +270,7 @@ do iter = 1, itmax
 
 #              Test for convergence.
 
-         if (p5*(rznorm/delta)**2 .le. rtol*(one-p5*rtol)*(par+(rxnorm/delta)**2)) then
+         if (p5*(rznorm/delta)**2 .le. rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)**2)) then
             info = 1
          else if (p5*(par+(rxnorm/delta)**2) .le. (atol/delta)/delta .and. info .eq. 0) then
             info = 2
@@ -281,11 +279,11 @@ do iter = 1, itmax
 
 #           Compute the Newton correction parc to par.
 
-      if (xnorm .eq. zero) then
+      if (xnorm .eq. zero(Float64)) then
          parc = -par
       else
          call dcopy(n,x,1,wa2,1)
-         temp = one/xnorm
+         temp = one(Float64)/xnorm
          call dscal(n,temp,wa2,1)
          call dtrsv('U','T','N',n,a,lda,wa2,1)
          temp = dnrm2(n,wa2,1)
@@ -319,7 +317,7 @@ do iter = 1, itmax
          a(indef,indef) = a(indef,indef) - temp**2
          call dtrsv('U','N','N',indef-1,a,lda,wa2,1)
       end if
-      wa2(indef) = -one
+      wa2(indef) = -one(Float64)
       temp = dnrm2(indef,wa2,1)
       parc = -(a(indef,indef)/temp)/temp
       pars = max(pars,par+parc)
@@ -328,7 +326,7 @@ do iter = 1, itmax
 #           This is needed because in some exceptional situations
 #           paru is the optimal value of par.
 
-      paru = max(paru,(one+rtol)*pars)
+      paru = max(paru,(one(Float64)+rtol)*pars)
    end if
 
 #        Use pars to update parl.
@@ -339,8 +337,8 @@ do iter = 1, itmax
 
    if (info .eq. 0) then
       if (iter .eq. itmax) info = 4
-      if (paru .le. (one+p5*rtol)*pars) info = 3
-      if (paru .eq. zero) info = 2
+      if (paru .le. (one(Float64)+p5*rtol)*pars) info = 3
+      if (paru .eq. zero(Float64)) info = 2
    end if
 
 #        If exiting, store the best approximation and restore
