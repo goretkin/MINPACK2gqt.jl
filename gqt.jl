@@ -245,7 +245,7 @@ for iter = 1:itmax
 #           information to improve pars.
 
       estsv(n,a,lda,rznorm,z) #TODO out args
-      pars = max(pars,par-rznorm**2)
+      pars = max(pars,par-rznorm^2)
 
 #           Compute a negative curvature solution of the form
 #           x + alpha*z where norm(x+alpha*z) = delta.
@@ -257,20 +257,20 @@ for iter = 1:itmax
 
          prod = BLAS.dot(n,z,1,x,1)/delta
          temp = (delta-xnorm)*((delta+xnorm)/delta)
-         alpha = temp/(abs(prod)+sqrt(prod**2+temp/delta))
+         alpha = temp/(abs(prod)+sqrt(prod^2+temp/delta))
          alpha = sign(alpha,prod)
 
 #              Test to decide if the negative curvature step
 #              produces a larger reduction than with z = 0.
 
          rznorm = abs(alpha)*rznorm
-         if ((rznorm/delta)**2+par*(xnorm/delta)**2 <= par) rednc = true
+         if ((rznorm/delta)^2+par*(xnorm/delta)^2 <= par) rednc = true
 
 #              Test for convergence.
 
-         if (p5*(rznorm/delta)**2 <= rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)**2))
+         if (p5*(rznorm/delta)^2 <= rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)^2))
             info = 1
-         else if (p5*(par+(rxnorm/delta)**2) <= (atol/delta)/delta && info == 0)
+         else if (p5*(par+(rxnorm/delta)^2) <= (atol/delta)/delta && info == 0)
             info = 2
          end
       end
@@ -312,7 +312,7 @@ for iter = 1:itmax
          BLAS.trsv!('U','T','N',indef-1,a,lda,wa2,1)
          BLAS.copy!(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
          temp = BLAS.nrm2(indef-1,@aref(a[1,indef]),1)
-         a[indef,indef] = a[indef,indef] - temp**2
+         a[indef,indef] = a[indef,indef] - temp^2
          BLAS.trsv!('U','N','N',indef-1,a,lda,wa2,1)
       end
       wa2[indef] = -one(Float64)
@@ -347,9 +347,9 @@ for iter = 1:itmax
 #           Compute the best current estimates for x and f.
 
       par = parf
-      f = -p5*(rxnorm**2+par*xnorm**2)
+      f = -p5*(rxnorm^2+par*xnorm^2)
       if (rednc)
-         f = -p5*((rxnorm**2+par*delta**2)-rznorm**2)
+         f = -p5*((rxnorm^2+par*delta^2)-rznorm^2)
          BLAS.axpy!(n,alpha,z,1,x,1)
       end
 
