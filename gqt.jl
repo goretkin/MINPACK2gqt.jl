@@ -149,7 +149,7 @@ rznorm = 0
 parf = zero(Float64)
 xnorm = zero(Float64)
 rxnorm = zero(Float64)
-rednc = .false.
+rednc = false
 for j = 1:n
    x(j) = zero(Float64)
    z(j) = zero(Float64)
@@ -253,7 +253,7 @@ for iter = 1:itmax
 #           Compute a negative curvature solution of the form
 #           x + alpha*z where norm(x+alpha*z) = delta.
 
-      rednc = .false.
+      rednc = false
       if (xnorm < delta)
 
 #              Compute alpha
@@ -267,7 +267,7 @@ for iter = 1:itmax
 #              produces a larger reduction than with z = 0.
 
          rznorm = abs(alpha)*rznorm
-         if ((rznorm/delta)**2+par*(xnorm/delta)**2 <= par) rednc = .true.
+         if ((rznorm/delta)**2+par*(xnorm/delta)**2 <= par) rednc = true
 
 #              Test for convergence.
 
