@@ -133,15 +133,16 @@ function gqt(n::Integer,a::DenseArray{Float64,2},lda::Integer,b::DenseArray{Floa
 #     Brett M. Averick, Richard Carter, and Jorge J. More'
 #
 #     ***********
-double precision p001, p5
-parameter (p001=1.0d-3,p5=0.5d0)
+const p001 = 1.0
+const p5 = 0.5
 
-logical rednc
-integer indef, iter, j
-double precision alpha, anorm, bnorm, parc, parf, parl, pars, paru, prod, rxnorm, rznorm, temp, xnorm
+iter = 0
 
-double precision dasum, ddot, dnrm2
-external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
+integer indef
+double precision rznorm
+
+# double precision dasum, ddot, dnrm2
+# external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
 
 #     Initialization.
 
