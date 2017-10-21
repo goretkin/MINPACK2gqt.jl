@@ -1,3 +1,4 @@
+include("fortran_test_help.jl")
 function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ref{Float64},z::AbstractArray{Float64,1})
       #TODO assert size(r) == (ldr,n), size(z) == (n)
 
@@ -84,9 +85,9 @@ function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ref{Float64},z
       end
 
 #     Solve R'*y = e.
-
+      fortranprint("R", r[:])
       for i = 1:n
-
+        fortranprint("for1", e, z)
 #        Scale y. The factor of 0.01 reduces the number of scalings.
 
          e = copysign(e,-z[i])
@@ -94,6 +95,7 @@ function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ref{Float64},z
             temp = min(p01,abs(r[i,i])/abs(e-z[i]))
             BLAS.scal!(n,temp,z,1)
             e = temp*e
+            fortranprint("if1", e, z, temp)
          end
 
 #        Determine the two possible choices of y(i).
@@ -105,7 +107,7 @@ function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ref{Float64},z
             w = (e-z[i])/r[i,i]
             wm = -(e+z[i])/r[i,i]
          end
-
+         fortranprint("wwm", w,  wm)
 #        Choose y(i) based on the predicted value of y(j) for j > i.
 
          s = abs(e-z[i])
@@ -113,14 +115,21 @@ function estsv(n::Int,r::AbstractArray{Float64,2},ldr::Int,svmin::Ref{Float64},z
          for j = (i + 1):n
             sm = sm + abs(z[j]+wm*r[i,j])
          end
+         fortranprint("ssm0", s,  sm)
          if (i < n)
+           fortranprint("i<n")
             BLAS.axpy!(n-i,w,@aref(r[i,i+1]),ldr,@aref(z[i+1]),1)
+            fortranprint("Z", z)
+            fortranprint("R", r[:])
             s = s + BLAS.asum(n-i,@aref(z[i+1]),1)
+            fortranprint("dasum", BLAS.asum(n-i,@aref(z[i+1]),1))
          end
+         fortranprint("ssm", s,  sm)
          if (s < sm)
             temp = wm - w
             w = wm
             if (i < n) BLAS.axpy!(n-i,temp,@aref(r[i,i+1]),ldr,@aref(z[i+1]),1) end
+            fortranprint("if_ssm_temp", temp)
          end
          z[i] = w
 
