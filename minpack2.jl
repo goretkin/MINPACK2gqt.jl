@@ -5,11 +5,9 @@ module Minpack2
   include("fortran_help.jl")
   using .FortranHelp
   #import FortranHelp: @aref
-  include("estsv.jl")
-  include("gqt.jl")
 
   struct MINPACK2Info
-    info::Int
+    code::Int
   end
 
   struct MINPACK2Exception
@@ -24,8 +22,8 @@ module Minpack2
     )
 
   function show(io::IO, v::MINPACK2Info)
-    print("MINPACK2Info: ", v.info, " ")
-    println(io, get(gqt_status, v.info, "Unknown Error Code"))
+    print("MINPACK2Info: ", v.code, " ")
+    println(io, get(gqt_status, v.code, "Unknown Error Code"))
   end
 
   function showerror(io::IO, ex::MINPACK2Exception)
@@ -34,9 +32,21 @@ module Minpack2
   end
 
   function throw_if_error(v::MINPACK2Info)
-    if v.info != 1 && info != 2
+    if v.code != 1 && v.code != 2
       throw(Minpack2.MINPACK2Exception(v))
     end
   end
 
+  include("estsv.jl")
+  include("gqt.jl")
+
+  function estsv(R)
+    n = size(R, 1)
+    ldr = stride(R,2)
+    svmin = Ref{Float64}()
+    z = Array{Float64}(n)
+
+    estsv(n, R, ldr, svmin, z)
+    return (z, svmin[])
+  end
 end
