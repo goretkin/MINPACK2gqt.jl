@@ -1,3 +1,48 @@
+type GQTWorkspace{T}
+  a::DenseArray{T,2}
+  b::DenseArray{T,1}
+  x::DenseArray{T,1}
+  z::DenseArray{T,1}
+  wa1::DenseArray{T,1}
+  wa2::DenseArray{T,1}
+  par::T
+  info::MINPACK2Info
+  function GQTWorkspace{T}(n::Int) where {T}
+    new{T}(
+      Matrix{T}(n,n),
+      Vector{T}(n),
+      Vector{T}(n),
+      Vector{T}(n),
+      Vector{T}(n),
+      Vector{T}(n),
+      zero(T),
+      MINPACK2Info(0))
+    end
+end
+
+function solve_gqt{T}(A::Matrix{T}, b::Vector{T}, delta::T, itmax::Int=100, atol::T=5e3*eps(T), rtol::T=5e11*eps(T))
+  n = size(A,1)
+  ws = GQTWorkspace{T}(n)
+  ws.a = A
+  ws.b = b
+  solve!(ws, delta, itmax, atol, rtol)
+  Minpack2.throw_if_error(ws.info)
+  return ws.x
+end
+
+# minimal allocation version
+function solve!{T}(ws::GQTWorkspace{T}, delta::T, itmax::Int, atol::T=5e3*eps(T), rtol::T=5e11*eps(T))
+  info_ = Ref{Int}(0)
+  par_ = Ref{T}(zero(T))
+  f_ = Ref{T}()
+  n = size(ws.a, 1)
+
+  gqt(n, ws.a, n, ws.b, delta, rtol, atol, itmax, par_, f_, ws.x, info_, ws.z, ws.wa1,  ws.wa2)
+  ws.par = par_[]
+  ws.info = MINPACK2Info(info_[])
+  return nothing
+end
+
 function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Int,par_::Ref{Float64},f_::Ref{Float64},x::DenseArray{Float64,1},info_::Ref{Int},z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
 
 #
@@ -319,11 +364,11 @@ for iter = 1:itmax
 #              Compute parc.
 
          BLAS.blascopy!(indef-1,@aref(a[1,indef]),1,pointer(wa2),1)
-         BLAS.trsv!('U','T','N',@view(a[:, 1:(indef-1)]),wa2) #TODO check that this view is accurate code before
+         BLAS.trsv!('U','T','N',@view(a[1:(indef-1), 1:(indef-1)]),@view(wa2[1:(indef-1)])) #TODO check that this view is accurate code before
          BLAS.blascopy!(indef-1,pointer(wa2),1,@aref(a[1,indef]),1)
          temp = BLAS.nrm2(indef-1,@aref(a[1,indef]),1)
          a[indef,indef] = a[indef,indef] - temp^2
-         BLAS.trsv!('U','N','N',@view(a[:, 1:(indef-1)]),wa2) #TODO check
+         BLAS.trsv!('U','N','N',@view(a[1:(indef-1), 1:(indef-1)]),@view(wa2[1:(indef-1)])) #TODO check
       end
       wa2[indef] = -one(Float64)
       temp = BLAS.nrm2(indef,wa2,1)
