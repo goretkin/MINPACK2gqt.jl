@@ -3,7 +3,7 @@
       integer n, lda, itmax, info
       double precision delta, rtol, atol, par, f
       double precision a(lda,n), b(n), x(n), z(n), wa1(n), wa2(n)
-c    
+c
 c Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
 c see CopyrightMINPACK.txt
 c
