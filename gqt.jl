@@ -1,25 +1,3 @@
-type GQTWorkspace{T}
-  a::DenseArray{T,2}
-  b::DenseArray{T,1}
-  x::DenseArray{T,1}
-  z::DenseArray{T,1}
-  wa1::DenseArray{T,1}
-  wa2::DenseArray{T,1}
-  par::T
-  info::MINPACK2Info
-  function GQTWorkspace{T}(n::Int) where {T}
-    new{T}(
-      Matrix{T}(n,n),
-      Vector{T}(n),
-      Vector{T}(n),
-      Vector{T}(n),
-      Vector{T}(n),
-      Vector{T}(n),
-      zero(T),
-      MINPACK2Info(0))
-    end
-end
-
 function solve_gqt{T}(A::Matrix{T}, b::Vector{T}, delta::T, itmax::Int=100, atol::T=5e3*eps(T), rtol::T=5e11*eps(T))
   n = size(A,1)
   ws = GQTWorkspace{T}(n)

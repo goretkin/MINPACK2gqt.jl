@@ -38,6 +38,7 @@ module Minpack2
   end
 
   include("estsv.jl")
+  include("gqt_workspace.jl")
   include("gqt.jl")
 
   function estsv(R)
