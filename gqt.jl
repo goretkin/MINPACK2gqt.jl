@@ -1,6 +1,7 @@
 function solve_gqt{T}(A::Matrix{T}, b::Vector{T}, delta::T, itmax::Int=100, atol::T=5e3*eps(T), rtol::T=5e11*eps(T))
   n = size(A,1)
   ws = GQTWorkspace{T}(n)
+  fill!(ws, 9.87654321)
   ws.a = A
   ws.b = b
   solve!(ws, delta, itmax, atol, rtol)
@@ -11,7 +12,7 @@ end
 # minimal allocation version
 function solve!{T}(ws::GQTWorkspace{T}, delta::T, itmax::Int, atol::T=5e3*eps(T), rtol::T=5e11*eps(T))
   info_ = Ref{Int}(0)
-  par_ = Ref{T}(zero(T))
+  par_ = Ref{T}(ws.par)
   f_ = Ref{T}()
   n = size(ws.a, 1)
 

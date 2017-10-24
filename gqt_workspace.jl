@@ -19,3 +19,14 @@ type GQTWorkspace{T}
       MINPACK2Info(0))
     end
 end
+
+import Base.fill!
+function fill!(ws::GQTWorkspace, v)
+  fill!(ws.a, v)
+  fill!(ws.b, v)
+  fill!(ws.x, v)
+  fill!(ws.z, v)
+  fill!(ws.wa1, v)
+  fill!(ws.wa2, v)
+  ws.par = v
+end
