@@ -15,12 +15,12 @@ function ellipsoid_extremal_point(E, c, p, sense=1)
   # y = U * (x-c)
   # x = c + U^-1 * y
 
-  # χ = 1/2 y' * U'^-1 * U^-1 * y + (c-p)' * y
+  # χ = 1/2 y' * U'^-1 * U^-1 * y + (c-p)' U^-1 * y
   # min sense*χ
   # s.t. |y| ≦ 1
 
   a = sense * iU' * iU
-  b = sense * (c - p)
+  b = sense * iU' * (c - p)
   Δ = 1.0
 
   y = Minpack2.solve_gqt(a, b, Δ, 100, 1e-12, 1e-4)
@@ -77,7 +77,7 @@ function ellipsoid_extremal_point_work(E, c, p, sense=1)
   # s.t. |y| ≦ 1
 
   a = sense * iU' * iU
-  b = sense * (c - p)
+  b = sense * iU' * (c - p)
   Δ = 1.0
 
   return (a, b)
