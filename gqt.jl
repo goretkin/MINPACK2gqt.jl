@@ -289,10 +289,11 @@ for iter = 1:itmax
 
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
-      rznorm_ = Ref{Float64}()
-      estsv(n,a,lda,rznorm_,z)
-      rznorm = rznorm_[]
-
+      #rznorm_ = Ref{Float64}()
+      #estsv(n,a,lda,rznorm_,z)
+      #rznorm = rznorm_[]
+      z_, rznorm = ELL_LIB.estsv(a) # call fortran version
+      copy!(z, z_)
       fortranprint("estsv", a, z)
       pars = max(pars,par-rznorm^2)
 
