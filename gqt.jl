@@ -157,7 +157,7 @@ function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},d
 #     Brett M. Averick, Richard Carter, and Jorge J. More'
 #
 #     ***********
-const p001 = 1.0
+const p001 = 1e-3
 const p5 = 0.5
 
 iter = 0
