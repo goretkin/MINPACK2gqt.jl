@@ -64,4 +64,40 @@ function estsv(R)
   )
   return (z, svmin[])
 end
+
+include("minpack2_interface.jl")
+using .Minpack2Interface
+
+function solve!(ws::GQTWorkspace, delta, itmax, atol, rtol)
+  n = size(ws.a, 1)
+  lda = stride(ws.a, 2)
+
+  info_ = Ref{Int}()
+  f_ = Ref{Float64}()
+
+  ccall(
+    ("dgqt_", "ELL_LIB_R1/ell.so"),
+    Void,
+    (Ref{Int}, Ptr{Float64}, Ref{Int}, Ptr{Float64}, Ref{Float64}, Ref{Float64}, Ref{Float64},
+    Ref{Int}, Ref{Float64}, Ref{Float64}, Ptr{Float64}, Ref{Int},
+    Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
+    n, ws.a, lda, ws.b, delta, rtol, atol,
+    itmax, ws.par, f_, ws.x, info_,
+    ws.z, ws.wa1, ws.wa2
+  )
+  ws.info = MINPACK2Info(info_[])
+  return (ws, f_[])
+end
+
+function solve_gqt{T}(A::Matrix{T}, b::Vector{T}, delta::T, itmax::Int=100, atol::T=5e3*eps(T), rtol::T=5e11*eps(T))
+  n = size(A,1)
+  ws = GQTWorkspace{T}(n)
+  fill!(ws, 9.87654321)
+  ws.a = A
+  ws.b = b
+  solve!(ws, delta, itmax, atol, rtol)
+  throw_if_error(ws.info)
+  return ws.x
+end
+
 end
