@@ -22,6 +22,7 @@ function solve!{T}(ws::GQTWorkspace{T}, delta::T, itmax::Int, atol::T=5e3*eps(T)
   return nothing
 end
 
+include("fortran_test_help.jl")
 function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},delta::Float64,rtol::Float64,atol::Float64,itmax::Int,par_::Ref{Float64},f_::Ref{Float64},x::DenseArray{Float64,1},info_::Ref{Int},z::DenseArray{Float64,1},wa1::DenseArray{Float64,1},wa2::DenseArray{Float64,1})
 
 #
@@ -182,14 +183,15 @@ for j = 1:n
    x[j] = zero(Float64)
    z[j] = zero(Float64)
 end
-
+fortranprint("A", a, b, x, z, wa1, wa2)
 #     Copy the diagonal and save A in its lower triangle.
 
 BLAS.blascopy!(n,a,lda+1,wa1,1)
+fortranprint("B", a, b, x, z, wa1, wa2)
 for j = 1:(n - 1)
    BLAS.blascopy!(n-j,@aref(a[j,j+1]),lda,@aref(a[j+1,j]),1)
 end
-
+fortranprint("C", a, b, x, z, wa1, wa2)
 #     Calculate the l1-norm of A, the Gershgorin row sums,
 #     and the l2-norm of b.
 
@@ -203,6 +205,8 @@ for j = 1:n
 end
 bnorm = BLAS.nrm2(n,b,1)
 
+fortranprint("D", anorm, bnorm, wa1, wa2)
+
 #     Calculate a lower bound, pars, for the domain of the problem.
 #     Also calculate an upper bound, paru, and a lower bound, parl,
 #     for the Lagrange multiplier.
@@ -210,14 +214,16 @@ bnorm = BLAS.nrm2(n,b,1)
 pars = -anorm
 parl = -anorm
 paru = -anorm
+fortranprint("allpar1", par, pars, parl, paru)
 for j = 1:n
    pars = max(pars,-wa1[j])
    parl = max(parl,wa1[j]+wa2[j])
    paru = max(paru,-wa1[j]+wa2[j])
 end
+fortranprint("allpar2", par, pars, parl, paru)
 parl = max(zero(Float64),bnorm/delta-parl,pars)
 paru = max(zero(Float64),bnorm/delta+paru)
-
+fortranprint("allpar3", par, pars, parl, paru)
 #     If the input par lies outside of the interval (parl,paru),
 #     set par to the closer endpoint.
 
@@ -227,31 +233,40 @@ par = min(par,paru)
 #     Special case: parl = paru.
 
 paru = max(paru,(one(Float64)+rtol)*parl)
-
+fortranprint("allpar4", par, pars, parl, paru)
 #     Beginning of an iteration.
 
 info = 0
 for iter = 1:itmax
-
+  fortranprint("iter", iter)
 #        Safeguard par.
+  fortranprint("allpar", par, pars, parl, paru)
+   if (par <= pars && paru > zero(Float64))
+     aaa = parl/paru
+     bbb = sqrt(aaa)
+     ccc = max(p001, bbb)
+     ddd = ccc * paru
+     fortranprint("ifallpar", aaa, bbb, ccc, ddd)
 
-   if (par <= pars && paru > zero(Float64)) par = max(p001, sqrt(parl/paru))*paru end
+     par = max(p001, sqrt(parl/paru))*paru
+   end
 
 #        Copy the lower triangle of A into its upper triangle and
 #        compute A + par*I.
-
+  fortranprint("par", par)
+  fortranprint("copy1", a, wa1)
    for j = 1:(n - 1)
       BLAS.blascopy!(n-j,@aref(a[j+1,j]),1,@aref(a[j,j+1]),lda)
    end
    for j = 1:n
       a[j,j] = wa1[j] + par
    end
-
+   fortranprint("copy2", a, wa1)
 #        Attempt the  Cholesky factorization of A without referencing
 #        the lower triangular part.
 
    _, indef = LAPACK.potrf!('U', a)
-
+   fortranprint("potrf", indef, a)
 #        Case 1: A + par*I is positive definite.
 
    if (indef == 0)
@@ -278,13 +293,14 @@ for iter = 1:itmax
       estsv(n,a,lda,rznorm_,z)
       rznorm = rznorm_[]
 
+      fortranprint("estsv", a, z)
       pars = max(pars,par-rznorm^2)
 
 #           Compute a negative curvature solution of the form
 #           x + alpha*z where norm(x+alpha*z) = delta.
 
       rednc = false
-
+      fortranprint("xnorm, delta", xnorm, delta)
       if (xnorm < delta)
 
 #              Compute alpha
@@ -407,7 +423,7 @@ for iter = 1:itmax
    par = max(parl,par+parc)
 
 #        End of an iteration.
-
+  fortranprint("enditr", par, wa1, wa2, z, x, a)
 end
 
 store_out_params()

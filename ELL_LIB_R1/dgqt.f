@@ -144,6 +144,8 @@ c     ***********
       double precision alpha, anorm, bnorm, parc, parf, parl, pars,
      +                 paru, prod, rxnorm, rznorm, temp, xnorm
 
+      double precision aaa, bbb, ccc, ddd
+
       double precision dasum, ddot, dnrm2
       external destsv, daxpy, dcopy, ddot, dnrm2, dscal, dtrmv, dtrsv
 
@@ -157,13 +159,15 @@ c     Initialization.
          x(j) = zero
          z(j) = zero
       end do
-
+      print *, "A", a, b, x, z, wa1, wa2
 c     Copy the diagonal and save A in its lower triangle.
 
       call dcopy(n,a,lda+1,wa1,1)
+      print *, "B", a, b, x, z, wa1, wa2
       do j = 1, n - 1
          call dcopy(n-j,a(j,j+1),lda,a(j+1,j),1)
       end do
+      print *, "C", a, b, x, z, wa1, wa2
 
 c     Calculate the l1-norm of A, the Gershgorin row sums,
 c     and the l2-norm of b.
@@ -178,6 +182,7 @@ c     and the l2-norm of b.
       end do
       bnorm = dnrm2(n,b,1)
 
+      print *, "D", anorm, bnorm, wa1, wa2
 c     Calculate a lower bound, pars, for the domain of the problem.
 c     Also calculate an upper bound, paru, and a lower bound, parl,
 c     for the Lagrange multiplier.
@@ -185,14 +190,16 @@ c     for the Lagrange multiplier.
       pars = -anorm
       parl = -anorm
       paru = -anorm
+      print *, "allpar1", par, pars, parl, paru
       do j = 1, n
          pars = max(pars,-wa1(j))
          parl = max(parl,wa1(j)+wa2(j))
          paru = max(paru,-wa1(j)+wa2(j))
       end do
+      print *, "allpar2", par, pars, parl, paru
       parl = max(zero,bnorm/delta-parl,pars)
       paru = max(zero,bnorm/delta+paru)
-
+      print *, "allpar3", par, pars, parl, paru
 c     If the input par lies outside of the interval (parl,paru),
 c     set par to the closer endpoint.
 
@@ -202,32 +209,39 @@ c     set par to the closer endpoint.
 c     Special case: parl = paru.
 
       paru = max(paru,(one+rtol)*parl)
-
+      print *, "allpar4", par, pars, parl, paru
 c     Beginning of an iteration.
 
       info = 0
       do iter = 1, itmax
-
+        print *, "iter", iter
 c        Safeguard par.
-
-         if (par .le. pars .and. paru .gt. zero) par = max(p001,
-     +       sqrt(parl/paru))*paru
+          print *, "allpar", par, pars, parl, paru
+         if (par .le. pars .and. paru .gt. zero) then
+          aaa = parl/paru
+          bbb = sqrt(aaa)
+          ccc = max(p001, bbb)
+          ddd = ccc * paru
+          print *, "ifallpar", aaa, bbb, ccc, ddd
+          par = max(p001, sqrt(parl/paru))*paru
+        end if
 
 c        Copy the lower triangle of A into its upper triangle and
 c        compute A + par*I.
-
+          print *, "par", par
+          print *, "copy1", a, wa1
          do j = 1, n - 1
             call dcopy(n-j,a(j+1,j),1,a(j,j+1),lda)
          end do
          do j = 1, n
             a(j,j) = wa1(j) + par
          end do
-
+          print *, "copy2", a, wa1
 c        Attempt the  Cholesky factorization of A without referencing
 c        the lower triangular part.
 
          call dpotrf('U',n,a,lda,indef)
-
+         print *, "potrf", indef, a
 c        Case 1: A + par*I is positive definite.
 
          if (indef .eq. 0) then
@@ -254,12 +268,14 @@ c           Compute a direction of negative curvature and use this
 c           information to improve pars.
 
             call destsv(n,a,lda,rznorm,z)
+            print *, "estsv", a, z
             pars = max(pars,par-rznorm**2)
 
 c           Compute a negative curvature solution of the form
 c           x + alpha*z where norm(x+alpha*z) = delta.
 
             rednc = .false.
+            print *, "xnorm, delta", xnorm, delta
             if (xnorm .lt. delta) then
 
 c              Compute alpha
@@ -380,7 +396,7 @@ c        Compute an improved estimate for par.
          par = max(parl,par+parc)
 
 c        End of an iteration.
-
+      print *, "enditr", par, wa1, wa2, z, x, a
       end do
 
       end
