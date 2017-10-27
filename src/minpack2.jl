@@ -6,8 +6,6 @@ module Minpack2
   include("minpack2_interface.jl")
   using .Minpack2Interface
 
-  include("ell_lib.jl")
-
   include("estsv.jl")
   include("gqt_workspace.jl")
   include("gqt.jl")
