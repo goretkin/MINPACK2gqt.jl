@@ -1,2 +1,0 @@
-gfortran -shared -fPIC destsv.f dgqt.f ellu_pt_near_far.f90 ell_pair_cover_query.f90 -lblas -llapack -oell.so
-
