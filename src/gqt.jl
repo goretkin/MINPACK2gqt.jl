@@ -5,7 +5,7 @@ function solve_gqt{T}(A::Matrix{T}, b::Vector{T}, delta::T, itmax::Int=100, atol
   ws.a = A
   ws.b = b
   solve!(ws, delta, itmax, atol, rtol)
-  Minpack2.throw_if_error(ws.info)
+  throw_if_error(ws.info)
   return ws.x
 end
 
