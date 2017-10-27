@@ -1,4 +1,4 @@
-module Minpack2
+module GQTPAR
   include("fortran_help.jl")
   using .FortranHelp
   #import FortranHelp: @aref
