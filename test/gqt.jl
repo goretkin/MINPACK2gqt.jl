@@ -16,6 +16,6 @@ function solve!(ws::GQTWorkspace, delta, itmax, atol, rtol)
     itmax, ws.par, f_, ws.x, info_,
     ws.z, ws.wa1, ws.wa2
   )
-  ws.info = MINPACK2Info(info_[])
+  ws.info = GQTPAR.Minpack2Interface.MINPACK2Info(info_[])
   return (ws, f_[])
 end
