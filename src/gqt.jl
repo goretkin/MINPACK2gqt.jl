@@ -160,27 +160,22 @@ function gqt(n::Int,a::DenseArray{Float64,2},lda::Int,b::DenseArray{Float64,1},d
 const p001 = 1e-3
 const p5 = 0.5
 
+const T = Float64
 iter = 0
 
 par = par_[]
 info = info_[]
 f = f_[]
 
-function store_out_params()
-  # Must be called from all return sites
-  par_[] = par
-  info_[] = info
-  f_[] = f
-end
 #     Initialization.
 
-parf = zero(Float64)
-xnorm = zero(Float64)
-rxnorm = zero(Float64)
+parf = zero(T)
+xnorm = zero(T)
+rxnorm = zero(T)
 rednc = false
 for j = 1:n
-   x[j] = zero(Float64)
-   z[j] = zero(Float64)
+   x[j] = zero(T)
+   z[j] = zero(T)
 end
 
 #     Copy the diagonal and save A in its lower triangle.
@@ -193,7 +188,7 @@ end
 #     Calculate the l1-norm of A, the Gershgorin row sums,
 #     and the l2-norm of b.
 
-anorm = zero(Float64)
+anorm = zero(T)
 for j = 1:n
    wa2[j] = BLAS.asum(n,@aref(a[1,j]),1)
    anorm = max(anorm,wa2[j])
@@ -215,8 +210,8 @@ for j = 1:n
    parl = max(parl,wa1[j]+wa2[j])
    paru = max(paru,-wa1[j]+wa2[j])
 end
-parl = max(zero(Float64),bnorm/delta-parl,pars)
-paru = max(zero(Float64),bnorm/delta+paru)
+parl = max(zero(T),bnorm/delta-parl,pars)
+paru = max(zero(T),bnorm/delta+paru)
 
 #     If the input par lies outside of the interval (parl,paru),
 #     set par to the closer endpoint.
@@ -226,7 +221,7 @@ par = min(par,paru)
 
 #     Special case: parl = paru.
 
-paru = max(paru,(one(Float64)+rtol)*parl)
+paru = max(paru,(one(T)+rtol)*parl)
 
 #     Beginning of an iteration.
 
@@ -235,7 +230,7 @@ for iter = 1:itmax
 
 #        Safeguard par.
 
-   if (par <= pars && paru > zero(Float64)) par = max(p001, sqrt(parl/paru))*paru end
+   if (par <= pars && paru > zero(T)) par = max(p001, sqrt(parl/paru))*paru end
 
 #        Copy the lower triangle of A into its upper triangle and
 #        compute A + par*I.
@@ -265,16 +260,16 @@ for iter = 1:itmax
       rxnorm = BLAS.nrm2(n,wa2,1)
       BLAS.trsv!('U','N','N',a,wa2)
       BLAS.blascopy!(n,wa2,1,x,1)
-      BLAS.scal!(n,-one(Float64),x,1)
+      BLAS.scal!(n,-one(T),x,1)
       xnorm = BLAS.nrm2(n,x,1)
 
 #           Test for convergence.
 
-      if (abs(xnorm-delta) <= rtol*delta || (par == zero(Float64) && xnorm <= (one(Float64)+rtol)*delta)) info = 1 end
+      if (abs(xnorm-delta) <= rtol*delta || (par == zero(T) && xnorm <= (one(T)+rtol)*delta)) info = 1 end
 
 #           Compute a direction of negative curvature and use this
 #           information to improve pars.
-      rznorm_ = Ref{Float64}()
+      rznorm_ = Ref{T}()
       estsv(n,a,lda,rznorm_,z)
       rznorm = rznorm_[]
 
@@ -302,7 +297,7 @@ for iter = 1:itmax
 
 #              Test for convergence.
 
-         if (p5*(rznorm/delta)^2 <= rtol*(one(Float64)-p5*rtol)*(par+(rxnorm/delta)^2))
+         if (p5*(rznorm/delta)^2 <= rtol*(one(T)-p5*rtol)*(par+(rxnorm/delta)^2))
             info = 1
          elseif (p5*(par+(rxnorm/delta)^2) <= (atol/delta)/delta && info == 0)
             info = 2
@@ -310,12 +305,12 @@ for iter = 1:itmax
       end
 
 #           Compute the Newton correction parc to par.
-
-      if (xnorm == zero(Float64))
+      parc = zero(T)
+      if (xnorm == zero(T))
          parc = -par
       else
          BLAS.blascopy!(n,x,1,wa2,1)
-         temp = one(Float64)/xnorm
+         temp = one(T)/xnorm
          BLAS.scal!(n,temp,wa2,1)
          BLAS.trsv!('U','T','N',a,wa2)
          temp = BLAS.nrm2(n,wa2,1)
@@ -349,7 +344,7 @@ for iter = 1:itmax
          a[indef,indef] = a[indef,indef] - temp^2
          BLAS.trsv!('U','N','N',@view(a[1:(indef-1), 1:(indef-1)]),@view(wa2[1:(indef-1)])) #TODO check
       end
-      wa2[indef] = -one(Float64)
+      wa2[indef] = -one(T)
       temp = BLAS.nrm2(indef,wa2,1)
       parc = -(a[indef,indef]/temp)/temp
       pars = max(pars,par+parc)
@@ -358,7 +353,7 @@ for iter = 1:itmax
 #           This is needed because in some exceptional situations
 #           paru is the optimal value of par.
 
-      paru = max(paru,(one(Float64)+rtol)*pars)
+      paru = max(paru,(one(T)+rtol)*pars)
    end
 
 #        Use pars to update parl.
@@ -369,8 +364,8 @@ for iter = 1:itmax
 
    if (info == 0)
       if (iter == itmax) info = 4 end
-      if (paru <= (one(Float64)+p5*rtol)*pars) info = 3 end
-      if (paru == zero(Float64)) info = 2 end
+      if (paru <= (one(T)+p5*rtol)*pars) info = 3 end
+      if (paru == zero(T)) info = 2 end
    end
 
 #        If exiting, store the best approximation and restore
@@ -397,9 +392,7 @@ for iter = 1:itmax
       BLAS.blascopy!(n,wa1,1,a,lda+1)
 
       z[1] = iter # SBP: modification to return number of iterations
-      store_out_params()
-
-      return
+      @goto returnpoint
    end
 
 #        Compute an improved estimate for par.
@@ -410,6 +403,9 @@ for iter = 1:itmax
 
 end
 
-store_out_params()
+@label returnpoint
+par_[] = par
+info_[] = info
+f_[] = f
 
 end
